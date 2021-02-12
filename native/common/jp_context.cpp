@@ -274,7 +274,7 @@ void JPContext::initializeResources(JNIEnv* env, bool interrupt)
 	jmethodID startMethod = frame.GetStaticMethodID(contextClass, "createContext",
 			"(JLjava/lang/ClassLoader;Ljava/lang/String;Z)Lorg/jpype/JPypeContext;");
 
-	cls = m_ClassLoader->findClass(frame, "org.jpype.JPypeContext");
+	jclass cls = m_ClassLoader->findClass(frame, "org.jpype.JPypeContext");
     m_ShutdownMethodID = frame.GetMethodID(cls, "shutdown", "()V");
 
 	// Find the native library
