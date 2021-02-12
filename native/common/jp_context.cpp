@@ -101,6 +101,7 @@ JPContext::JPContext()
 	m_Throwable_GetCauseID = NULL;
 	m_Context_GetStackFrameID = NULL;
 	m_Embedded = false;
+	m_ShutdownMethodID = 0;
 
 	m_GC = new JPGarbageCollection(this);
 }
@@ -272,6 +273,7 @@ void JPContext::initializeResources(JNIEnv* env, bool interrupt)
 
 	jmethodID startMethod = frame.GetStaticMethodID(contextClass, "createContext",
 			"(JLjava/lang/ClassLoader;Ljava/lang/String;Z)Lorg/jpype/JPypeContext;");
+    m_ShutdownMethodID = frame.GetMethodID(cls, "shutdown", "()V");
 
 	// Find the native library
 	JPPyObject import = JPPyObject::call(PyImport_AddModule("importlib.util"));
