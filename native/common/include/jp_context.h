@@ -127,7 +127,7 @@ public:
 			bool ignoreUnrecognized, bool convertStrings, bool interrupt);
 	void attachJVM(JNIEnv* env);
 	void initializeResources(JNIEnv* env, bool interrupt);
-	void shutdownJVM(bool disgracefulTermination);
+	void shutdownJVM(int disgracefulTermination);
 	void attachCurrentThread();
 	void attachCurrentThreadAsDaemon();
 	bool isThreadAttached();

@@ -378,7 +378,7 @@ void JPContext::onShutdown()
 	m_Running = false;
 }
 
-void JPContext::shutdownJVM(bool disgracefulTermination)
+void JPContext::shutdownJVM(int disgracefulTermination)
 {
 	JP_TRACE_IN("JPContext::shutdown");
 	if (m_JavaVM == NULL)
@@ -387,7 +387,7 @@ void JPContext::shutdownJVM(bool disgracefulTermination)
 	//		JP_RAISE(PyExc_RuntimeError, "Cannot shutdown from embedded Python");
 
     // Old style version to force quit with all the risks discussed
-    if (disgracefulTermination) {
+    if (disgracefulTermination == 1) {
         {
             JPJavaFrame frame = JPJavaFrame::outer(this)
             JP_TRACE("Shutdown services");

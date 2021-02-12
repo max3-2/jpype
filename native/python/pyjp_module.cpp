@@ -277,12 +277,18 @@ static PyObject* PyJPModule_startup(PyObject* module, PyObject* pyargs)
 	JP_PY_CATCH(NULL);
 }
 
-static PyObject* PyJPModule_shutdown(PyObject* obj)
+static PyObject* PyJPModule_shutdown(PyObject* obj, PyObject* pyargs)
 {
-	JP_PY_TRY("PyJPModule_shutdown");
-	JPContext_global->shutdownJVM();
-	Py_RETURN_NONE;
-	JP_PY_CATCH(NULL);
+    int disgracefulTermination;
+
+    if (!PyArg_ParseTuple(pyargs, "d", &disgracefulTermination)) {
+        disgracefulTermination = 0;
+    }
+
+    JP_PY_TRY("PyJPModule_shutdown");
+    JPContext_global->shutdownJVM(disgracefulTermination);
+    Py_RETURN_NONE;
+    JP_PY_CATCH(NULL);
 }
 #endif
 
@@ -656,7 +662,7 @@ static PyMethodDef moduleMethods[] = {
 #else
 	{"startup", (PyCFunction) PyJPModule_startup, METH_VARARGS, ""},
 	//	{"attach", (PyCFunction) (&PyJPModule_attach), METH_VARARGS, ""},
-	{"shutdown", (PyCFunction) PyJPModule_shutdown, METH_NOARGS, ""},
+	{"shutdown", (PyCFunction) PyJPModule_shutdown, METH_VARARGS, ""},
 #endif
 	{"_getClass", (PyCFunction) PyJPModule_getClass, METH_O, ""},
 	{"_hasClass", (PyCFunction) PyJPModule_hasClass, METH_O, ""},
@@ -706,7 +712,7 @@ PyMODINIT_FUNC PyInit__jpype()
 #if PY_VERSION_HEX<0x03070000
 	// This is required for python versions prior to 3.7.
 	// It is called by the python initialization starting from 3.7,
-	// but is safe to call afterwards.  Starting 3.9 this issues a 
+	// but is safe to call afterwards.  Starting 3.9 this issues a
 	// deprecation warning.
 	PyEval_InitThreads();
 #endif
