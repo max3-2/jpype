@@ -319,17 +319,25 @@ def initializeResources():
     _JVM_started = True
 
 
-def shutdownJVM():
+def shutdownJVM(disgraceful=False):
     """ Shuts down the JVM.
 
     This method shuts down the JVM and disables access to existing
     Java objects. Due to limitations in the JPype, it is not possible to
     restart the JVM after being terminated.
+
+    Parameters
+    -----------
+    disgraceful : `bool`, optional
+        Runs the old style, v0.7.5, temrination which will most likely lead
+        to problems down the road if the interpreter does not quit. This is
+        solely implemented to allow quitting JVMs with lingering 3rd-party
+        threads. Use with caution. Defaults to False.
     """
     import threading
     if threading.current_thread() is not threading.main_thread():
         raise RuntimeError("Shutdown must be called from main thread")
-    _jpype.shutdown()
+    _jpype.shutdown(disgraceful)
 
 
 # In order to shutdown cleanly we need the reference queue stopped

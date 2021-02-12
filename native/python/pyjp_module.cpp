@@ -281,7 +281,7 @@ static PyObject* PyJPModule_shutdown(PyObject* obj, PyObject* pyargs)
 {
     int disgracefulTermination;
 
-    if (!PyArg_ParseTuple(pyargs, "d", &disgracefulTermination)) {
+    if (!PyArg_ParseTuple(pyargs, "p", &disgracefulTermination)) {
         disgracefulTermination = 0;
     }
 
