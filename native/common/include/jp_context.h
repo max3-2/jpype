@@ -229,6 +229,7 @@ private:
 	jmethodID m_Object_ToStringID;
 	jmethodID m_Object_EqualsID;
 	jmethodID m_Object_HashCodeID;
+	jmethodID m_ShutdownMethodID;
 	jmethodID m_CallMethodID;
 	jmethodID m_Class_GetNameID;
 	jmethodID m_Context_collectRectangularID;
