@@ -389,7 +389,7 @@ void JPContext::shutdownJVM(bool disgracefulTermination)
     // Old style version to force quit with all the risks discussed
     if (disgracefulTermination) {
         {
-            JPJavaFrame frame(this);
+            JPJavaFrame frame = JPJavaFrame::outer(this)
             JP_TRACE("Shutdown services");
             JP_TRACE(m_JavaContext.get());
             JP_TRACE(m_ShutdownMethodID);
