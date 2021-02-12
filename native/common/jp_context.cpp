@@ -374,7 +374,7 @@ void JPContext::onShutdown()
 	m_Running = false;
 }
 
-void JPContext::shutdownJVM()
+void JPContext::shutdownJVM(bool disgracefulTermination)
 {
 	JP_TRACE_IN("JPContext::shutdown");
 	if (m_JavaVM == NULL)
@@ -382,21 +382,50 @@ void JPContext::shutdownJVM()
 	//	if (m_Embedded)
 	//		JP_RAISE(PyExc_RuntimeError, "Cannot shutdown from embedded Python");
 
-	// Wait for all non-demon threads to terminate
-	JP_TRACE("Destroy JVM");
-	{
-		JPPyCallRelease call;
-		m_JavaVM->DestroyJavaVM();
-	}
+    // Old style version to force quit with all the risks discussed
+    if (disgracefulTermination) {
+        {
+            JPJavaFrame frame(this);
+            JP_TRACE("Shutdown services");
+            JP_TRACE(m_JavaContext.get());
+            JP_TRACE(m_ShutdownMethodID);
 
-	JP_TRACE("Delete resources");
-	for (std::list<JPResource*>::iterator iter = m_Resources.begin();
-			iter != m_Resources.end(); ++iter)
-	{
-		delete *iter;
-	}
-	m_Resources.clear();
+            // Tell Java to shutdown the context
+            {
+                JPPyCallRelease release;
+                if (m_JavaContext.get() != 0)
+                    frame.CallVoidMethodA(m_JavaContext.get(), m_ShutdownMethodID, 0);
+            }
+        }
 
+        // Wait for all non-demon threads to terminate
+        // DestroyJVM is rather misnamed.  It is simply a wait call
+        // Our reference queue thunk does not appear to have properly set
+        // as daemon so we hang here
+        JP_TRACE("Destroy JVM");
+        //	s_JavaVM->functions->DestroyJavaVM(s_JavaVM);
+    }
+
+    // This is the good new version with a save quit. This just has the single
+    // culprit that it will hang on deadlocked java threads!
+    else {
+        // Wait for all non-demon threads to terminate
+        JP_TRACE("Destroy JVM");
+        {
+            JPPyCallRelease call;
+            m_JavaVM->DestroyJavaVM();
+        }
+
+        JP_TRACE("Delete resources");
+        for (std::list<JPResource*>::iterator iter = m_Resources.begin();
+                iter != m_Resources.end(); ++iter)
+        {
+            delete *iter;
+        }
+        m_Resources.clear();
+    }
+
+    // From here on its the same in each version again...
 	// unload the jvm library
 	JP_TRACE("Unload JVM");
 	m_JavaVM = NULL;
@@ -481,22 +510,22 @@ extern "C" JNIEXPORT void JNICALL Java_org_jpype_JPypeContext_onShutdown
 }
 
 /**********************************************************************
- * Interrupts are complex.   Both Java and Python want to handle the 
- * interrupt, but only one can be in control.  Java starts later and 
+ * Interrupts are complex.   Both Java and Python want to handle the
+ * interrupt, but only one can be in control.  Java starts later and
  * installs its handler over Python as a chain.  If Java handles it then
  * the JVM will terminate which leaves Python with a bunch of bad
  * references which tends to lead to segfaults.  So we need to disable
- * the Java one by routing it back to Python.  But if we do so then 
+ * the Java one by routing it back to Python.  But if we do so then
  * Java wont respect Ctrl+C.  So we need to handle the interrupt, convert
- * it to a wait interrupt so that Java can break at the next I/O and 
+ * it to a wait interrupt so that Java can break at the next I/O and
  * then trip Python signal handler so the Python gets the interrupt.
  *
  * But this leads to a few race conditions.
  *
- * If the control is in Java then it will get the interrupt next time 
+ * If the control is in Java then it will get the interrupt next time
  * it hits Python code when the returned object is checked resulting
  * InterruptedException.  Now we have two exceptions on the stack,
- * the one from Java and the one from Python.  We check to see if 
+ * the one from Java and the one from Python.  We check to see if
  * Python has a pending interrupt and eat the Java one.
  *
  * If the control is in Java and it hits an I/O call.  This generates
